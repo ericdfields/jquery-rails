@@ -43,7 +43,7 @@
     enableSelector: 'input[data-disable-with]:disabled, button[data-disable-with]:disabled, textarea[data-disable-with]:disabled, input[data-disable]:disabled, button[data-disable]:disabled, textarea[data-disable]:disabled',
 
     // Form required input elements
-    requiredInputSelector: 'input[name][required]:not([disabled]),textarea[name][required]:not([disabled])',
+    requiredInputSelector: 'input[name][required]:not([disabled]),textarea[name][required]:not([disabled]),select[name][required]:not([disabled])',
 
     // Form file input elements
     fileInputSelector: 'input[type=file]',
@@ -54,17 +54,25 @@
     // Button onClick disable selector with possible reenable after remote submission
     buttonDisableSelector: 'button[data-remote][data-disable-with], button[data-remote][data-disable]',
 
+    // Up-to-date Cross-Site Request Forgery token
+    csrfToken: function() {
+     return $('meta[name=csrf-token]').attr('content');
+    },
+
+    // URL param that must contain the CSRF token
+    csrfParam: function() {
+     return $('meta[name=csrf-param]').attr('content');
+    },
+
     // Make sure that every Ajax request sends the CSRF token
     CSRFProtection: function(xhr) {
-      var token = $('meta[name="csrf-token"]').attr('content');
+      var token = rails.csrfToken();
       if (token) xhr.setRequestHeader('X-CSRF-Token', token);
     },
 
     // making sure that all forms have actual up-to-date token(cached forms contain old one)
     refreshCSRFTokens: function(){
-      var csrfToken = $('meta[name=csrf-token]').attr('content');
-      var csrfParam = $('meta[name=csrf-param]').attr('content');
-      $('form input[name="' + csrfParam + '"]').val(csrfToken);
+      $('form input[name="' + rails.csrfParam() + '"]').val(rails.csrfToken());
     },
 
     // Triggers an event on an element and returns false if the event result is false
@@ -411,12 +419,12 @@
       if (!rails.allowAction(form)) return rails.stopEverything(e);
 
       // skip other logic when required values are missing or file upload is present
-      if (form.attr('novalidate') == undefined) {
+      // if (form.attr('novalidate') == undefined) {
         blankRequiredInputs = rails.blankInputs(form, rails.requiredInputSelector);
         if (blankRequiredInputs && rails.fire(form, 'ajax:aborted:required', [blankRequiredInputs])) {
           return rails.stopEverything(e);
         }
-      }
+      // }
 
       if (remote) {
         nonBlankFileInputs = rails.nonBlankInputs(form, rails.fileInputSelector);
